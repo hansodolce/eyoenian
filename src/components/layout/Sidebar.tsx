@@ -32,14 +32,21 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         'lg:translate-x-0 lg:static lg:z-auto',
         open ? 'translate-x-0' : '-translate-x-full'
       )}>
-        <div className="flex items-center gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-secondary-700 flex-shrink-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white/10 p-1">
-            <img src="/icons/icon-192x192.png" alt="Eyo-Enian" className="w-full h-full object-contain" />
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4 sm:py-5 border-b border-secondary-700 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden flex-shrink-0 bg-white/10 p-1">
+              <img src="/icons/icon-192x192.png" alt="Eyo-Enian" className="w-full h-full object-contain" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Eyo-Enian</p>
+              <p className="text-xs text-secondary-400">Association</p>
+            </div>
           </div>
-          <div>
-            <p className="font-semibold text-sm">Eyo-Enian</p>
-            <p className="text-xs text-secondary-400">Association</p>
-          </div>
+          <button onClick={onClose} className="lg:hidden p-2 text-secondary-400 hover:text-white hover:bg-secondary-700 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Fermer le menu">
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         <nav className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-1">
           {links.map(link => (
