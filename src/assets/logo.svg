@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <!-- Background -->
+  <rect width="400" height="400" fill="#ffffff" rx="40"/>
+  
+  <!-- Outer circle decoration -->
+  <circle cx="200" cy="200" r="190" fill="none" stroke="#0052CC" stroke-width="3" opacity="0.2"/>
+  
+  <!-- Woman's head outline -->
+  <g transform="translate(140, 100)">
+    <!-- Face -->
+    <path d="M -30 -40 Q -40 -25 -40 0 Q -40 30 -25 45 L 25 45 Q 40 30 40 0 Q 40 -25 30 -40 Q 0 -55 0 -55 Q 0 -55 -30 -40" 
+          fill="none" stroke="#0052CC" stroke-width="4"/>
+    
+    <!-- Eyes closed (relaxed) -->
+    <path d="M -15 -10 Q -10 -6 -5 -10" fill="none" stroke="#0052CC" stroke-width="3" stroke-linecap="round"/>
+    <path d="M 5 -10 Q 10 -6 15 -10" fill="none" stroke="#0052CC" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Smile -->
+    <path d="M -12 12 Q 0 20 12 12" fill="none" stroke="#0052CC" stroke-width="3" stroke-linecap="round"/>
+    
+    <!-- Turban - Blue back layer -->
+    <ellipse cx="0" cy="-55" rx="50" ry="35" fill="#0052CC"/>
+    <path d="M -50 -35 Q -58 -55 -38 -70 Q -15 -78 0 -78 Q 15 -78 38 -70 Q 58 -55 50 -35" fill="#0052CC"/>
+    
+    <!-- Turban - Orange/Yellow band -->
+    <ellipse cx="0" cy="-50" rx="48" ry="20" fill="#FF7F00"/>
+    <path d="M -48 -40 Q -56 -55 -36 -68 Q -12 -75 0 -75 Q 12 -75 36 -68 Q 56 -55 48 -40" fill="#FF7F00"/>
+    
+    <!-- Turban - Blue front layer -->
+    <path d="M -40 -35 Q -32 -48 -8 -58 Q 0 -62 8 -58 Q 32 -48 40 -35 Z\" fill="#0052CC"/>
+    
+    <!-- Earring - Orange circle -->
+    <circle cx="45" cy="0" r="12" fill="#FF7F00" stroke="#FF7F00" stroke-width="1"/>
+  </g>
+  
+  <!-- Gear (right side) -->
+  <g transform="translate(260, 140)">
+    <circle cx="0" cy="0" r="45" fill="none" stroke="#0052CC" stroke-width="8"/>
+    <!-- Gear teeth -->
+    <g stroke="#0052CC" stroke-width="6" fill="#0052CC">
+      <rect x="-4" y="-60" width="8" height="20" rx="2"/>
+      <rect x="-4" y="40" width="8" height="20" rx="2"/>
+      <rect x="-60" y="-4" width="20" height="8" rx="2"/>
+      <rect x="40" y="-4" width="20" height="8" rx="2"/>
+      <rect x="-42" y="-42" width="14" height="14" rx="2" transform="rotate(45 -35 -35)"/>
+      <rect x="28" y="-42" width="14" height="14" rx="2" transform="rotate(45 35 -35)"/>
+      <rect x="-42" y="28" width="14" height="14" rx="2" transform="rotate(45 -35 35)"/>
+      <rect x="28" y="28" width="14" height="14" rx="2" transform="rotate(45 35 35)"/>
+    </g>
+    <!-- Center circle -->
+    <circle cx="0" cy="0" r="15" fill="#FF7F00"/>
+  </g>
+  
+  <!-- Hand (bottom left) -->
+  <g transform="translate(80, 230)">
+    <path d="M 0 0 Q -25 -15 -35 -40 Q -42 -65 -20 -80\" 
+          fill="none" stroke="#FF7F00\" stroke-width="8\" stroke-linecap=\"round\"/>
+    <path d="M 0 0 Q 25 -20 40 -65\" 
+          fill=\"none\" stroke=\"#FF7F00\" stroke-width=\"8\" stroke-linecap=\"round\"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="200\" y=\"330\" font-family=\"Arial, sans-serif\" font-size=\"44\" font-weight=\"bold\" 
+        text-anchor=\"middle\" fill=\"#0052CC\">Eyo-</text>
+  <text x=\"240\" y=\"330\" font-family=\"Arial, sans-serif\" font-size=\"44\" font-weight=\"bold\" 
+        text-anchor=\"start\" fill=\"#FF7F00\">Enian</text>
+  
+  <text x=\"200\" y=\"365\" font-family=\"Arial, sans-serif\" font-size=\"14\" 
+        text-anchor=\"middle\" fill=\"#0052CC\">Association des femmes de Valeur</text>
+</svg>
