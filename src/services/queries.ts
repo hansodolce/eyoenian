@@ -241,11 +241,26 @@ export function useCreatePayment(type: 'annual' | 'special') {
 export function useUpdatePayment(type: 'annual' | 'special') {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string; statut: string; observation?: string }) => {
+    mutationFn: async ({ id, ...data }: { id: string; montant?: number; date_paiement?: string; mode_paiement?: string; statut?: string; observation?: string }) => {
       const table = type === 'annual' ? 'annual_payments' : 'special_payments'
       const { data: result, error } = await supabase.from(table).update(data).eq('id', id).select().single()
       if (error) throw error
       return result
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [type === 'annual' ? 'annual-payments' : 'special-payments'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] })
+    }
+  })
+}
+
+export function useDeletePayment(type: 'annual' | 'special') {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const table = type === 'annual' ? 'annual_payments' : 'special_payments'
+      const { error } = await supabase.from(table).delete().eq('id', id)
+      if (error) throw error
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [type === 'annual' ? 'annual-payments' : 'special-payments'] })

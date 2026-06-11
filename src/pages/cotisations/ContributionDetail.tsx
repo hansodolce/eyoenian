@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import * as XLSX from 'xlsx'
-import { Card, CardBody, Button, Modal, Input, Select, Pagination, LoadingSpinner, PageHeader } from '@/components/ui'
+import { Card, CardBody, Button, Modal, Input, Select, Pagination, LoadingSpinner, PageHeader, ConfirmDialog } from '@/components/ui'
 import { formatDate, formatCurrency } from '@/utils'
 import type { Member, AnnualContribution, SpecialContribution, AnnualPayment, SpecialPayment } from '@/types'
 
@@ -17,8 +17,10 @@ export function ContributionDetail({ type }: { type: 'annual' | 'special' }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<'all' | 'paye' | 'partiel' | 'impaye'>('all')
   const [page, setPage] = useState(1)
-  const [showPayment, setShowPayment] = useState<string | null>(null)
+  const [showPayment, setShowPayment] = useState<{ memberId: string; editPayment?: any } | null>(null)
   const [paymentForm, setPaymentForm] = useState({ montant: 0, date_paiement: new Date().toISOString().split('T')[0], mode_paiement: 'Mobile Money' as string, observation: '' })
+  const [showPaymentsList, setShowPaymentsList] = useState<string | null>(null)
+  const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null)
   const [showImport, setShowImport] = useState(false)
   const [importRows, setImportRows] = useState<any[]>([])
   const [importColumns, setImportColumns] = useState<string[]>([])
@@ -82,6 +84,33 @@ export function ContributionDetail({ type }: { type: 'annual' | 'special' }) {
       toast.success('Paiement enregistré')
       setShowPayment(null)
       setPaymentForm({ montant: 0, date_paiement: new Date().toISOString().split('T')[0], mode_paiement: 'Mobile Money', observation: '' })
+    },
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  const updatePayment = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; montant: number; date_paiement: string; mode_paiement: string; observation?: string }) => {
+      const { error } = await supabase.from(paymentTable).update(data).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [paymentQueryKey] })
+      toast.success('Paiement modifié')
+      setShowPayment(null)
+      setPaymentForm({ montant: 0, date_paiement: new Date().toISOString().split('T')[0], mode_paiement: 'Mobile Money', observation: '' })
+    },
+    onError: (err: any) => toast.error(err.message)
+  })
+
+  const deletePayment = useMutation({
+    mutationFn: async (paymentId: string) => {
+      const { error } = await supabase.from(paymentTable).delete().eq('id', paymentId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [paymentQueryKey] })
+      toast.success('Paiement supprimé')
+      setDeletePaymentId(null)
     },
     onError: (err: any) => toast.error(err.message)
   })
@@ -288,11 +317,19 @@ export function ContributionDetail({ type }: { type: 'annual' | 'special' }) {
                       </div>
                     </td>
                     <td className="py-3 px-2 text-right">
-                      {status !== 'paye' && (
-                        <Button size="sm" variant="success" onClick={() => { setShowPayment(member.id); setPaymentForm(f => ({ ...f, montant: contribAmount - totalPaid })) }}>
-                          Payer
-                        </Button>
-                      )}
+                      <div className="flex items-center justify-end gap-1.5">
+                        {status !== 'paye' && (
+                          <Button size="sm" variant="success" onClick={() => { setShowPayment({ memberId: member.id }); setPaymentForm(f => ({ ...f, montant: contribAmount - totalPaid })) }}>
+                            Payer
+                          </Button>
+                        )}
+                        {totalPaid > 0 && (
+                          <Button size="sm" variant="secondary" onClick={() => setShowPaymentsList(member.id)}>
+                            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            <span className="hidden sm:inline ml-1">{status === 'paye' ? 'Modifier' : 'Paiements'}</span>
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -314,8 +351,16 @@ export function ContributionDetail({ type }: { type: 'annual' | 'special' }) {
         </CardBody>
       </Card>
 
-      <Modal open={!!showPayment} onClose={() => setShowPayment(null)} title="Enregistrer un paiement">
-        <form onSubmit={e => { e.preventDefault(); showPayment && createPayment.mutate(showPayment) }} className="space-y-4">
+      <Modal open={!!showPayment} onClose={() => { setShowPayment(null); setPaymentForm({ montant: 0, date_paiement: new Date().toISOString().split('T')[0], mode_paiement: 'Mobile Money', observation: '' }) }} title={showPayment?.editPayment ? 'Modifier le paiement' : 'Enregistrer un paiement'}>
+        <form onSubmit={e => {
+          e.preventDefault()
+          if (!showPayment) return
+          if (showPayment.editPayment) {
+            updatePayment.mutate({ id: showPayment.editPayment.id, ...paymentForm, observation: paymentForm.observation || undefined })
+          } else {
+            createPayment.mutate(showPayment.memberId)
+          }
+        }} className="space-y-4">
           <Input label="Montant (FCFA)" type="number" value={paymentForm.montant} onChange={e => setPaymentForm(f => ({ ...f, montant: parseInt(e.target.value) || 0 }))} required />
           <Input label="Date" type="date" value={paymentForm.date_paiement} onChange={e => setPaymentForm(f => ({ ...f, date_paiement: e.target.value }))} required />
           <Select label="Mode de paiement" value={paymentForm.mode_paiement} onChange={e => setPaymentForm(f => ({ ...f, mode_paiement: e.target.value }))}
@@ -323,8 +368,8 @@ export function ContributionDetail({ type }: { type: 'annual' | 'special' }) {
           />
           <Input label="Observation" value={paymentForm.observation} onChange={e => setPaymentForm(f => ({ ...f, observation: e.target.value }))} />
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setShowPayment(null)}>Annuler</Button>
-            <Button type="submit" loading={createPayment.isPending}>Enregistrer</Button>
+            <Button variant="secondary" type="button" onClick={() => { setShowPayment(null); setPaymentForm({ montant: 0, date_paiement: new Date().toISOString().split('T')[0], mode_paiement: 'Mobile Money', observation: '' }) }}>Annuler</Button>
+            <Button type="submit" loading={createPayment.isPending || updatePayment.isPending}>{showPayment?.editPayment ? 'Modifier' : 'Enregistrer'}</Button>
           </div>
         </form>
       </Modal>
@@ -513,6 +558,61 @@ export function ContributionDetail({ type }: { type: 'annual' | 'special' }) {
           )}
         </div>
       </Modal>
+
+      {/* Member Payments List Modal */}
+      <Modal open={!!showPaymentsList} onClose={() => setShowPaymentsList(null)} title="Paiements du membre" className="max-w-lg">
+        {showPaymentsList && (() => {
+          const member = members.find(m => m.id === showPaymentsList)
+          const mPayments = (memberPayments.get(showPaymentsList) || []).filter((p: any) => p.statut === 'Confirmé')
+          return (
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-secondary-900">{member?.prenoms} {member?.nom} — {member?.telephone}</p>
+              {mPayments.length === 0 ? (
+                <p className="text-sm text-secondary-500">Aucun paiement</p>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  {mPayments.map((p: any) => (
+                    <div key={p.id} className="flex items-start gap-3 p-3 rounded-lg border border-secondary-200 hover:bg-secondary-50">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-secondary-900">{formatCurrency(p.montant)}</span>
+                          <span className="text-xs bg-primary-100 text-primary-700 px-1.5 py-0.5 rounded">{p.mode_paiement}</span>
+                        </div>
+                        <p className="text-xs text-secondary-500 mt-0.5">{formatDate(p.date_paiement)}</p>
+                        {p.observation && <p className="text-xs text-secondary-400 mt-0.5">{p.observation}</p>}
+                      </div>
+                      <div className="flex gap-1.5 flex-shrink-0">
+                        <button onClick={() => {
+                          setShowPaymentsList(null)
+                          setShowPayment({ memberId: showPaymentsList, editPayment: p })
+                          setPaymentForm({ montant: p.montant, date_paiement: p.date_paiement?.split('T')[0] || p.date_paiement, mode_paiement: p.mode_paiement, observation: p.observation || '' })
+                        }} className="p-1.5 text-secondary-500 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors" title="Modifier">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                        </button>
+                        <button onClick={() => setDeletePaymentId(p.id)} className="p-1.5 text-secondary-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Supprimer">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="flex justify-end pt-2">
+                <Button variant="secondary" onClick={() => setShowPaymentsList(null)}>Fermer</Button>
+              </div>
+            </div>
+          )
+        })()}
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deletePaymentId}
+        title="Supprimer le paiement"
+        message="Êtes-vous sûr de vouloir supprimer ce paiement ? Cette action est irréversible."
+        onConfirm={() => deletePaymentId && deletePayment.mutate(deletePaymentId)}
+        onCancel={() => setDeletePaymentId(null)}
+        loading={deletePayment.isPending}
+      />
     </div>
   )
 }
