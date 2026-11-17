@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import { ensureGestionnaireSession } from '@/services/gestionnaireSession'
 import type { Profile, UserRole } from '@/types'
 
 interface AuthContextType {
@@ -109,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(memberProfile)
       return
     }
-    await supabase.auth.signInAnonymously()
+    await ensureGestionnaireSession(supabase.auth)
     persistProfile(profile as Profile)
     setProfile(profile as Profile)
   }
@@ -130,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!fullName.trim()) throw new Error('Le nom est obligatoire')
     if (profile.role === 'gestionnaire') {
       if (!phone.trim()) throw new Error('Le téléphone est obligatoire')
+      await ensureGestionnaireSession(supabase.auth)
       const { data, error } = await supabase.rpc('update_own_gestionnaire', {
         p_id: profile.id, p_current_pin: currentPin || '',
         p_full_name: fullName.trim(), p_phone: phone.trim(),
@@ -151,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (currentPassword === newPassword) throw new Error('Le nouveau code doit être différent du précédent')
     if (profile.role === 'gestionnaire') {
       if (!/^\d{4}$/.test(newPassword)) throw new Error('Le PIN doit contenir exactement 4 chiffres')
+      await ensureGestionnaireSession(supabase.auth)
       const { data, error } = await supabase.rpc('update_own_gestionnaire', {
         p_id: profile.id, p_current_pin: currentPassword, p_new_pin: newPassword,
       })
