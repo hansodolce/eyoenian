@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Link, Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
 import { useAuth } from '@/hooks/useAuth'
 import { OfflineBanner } from '@/components/ui/OfflineBanner'
@@ -25,10 +25,12 @@ export function Layout() {
             </div>
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
-            <span className="text-xs sm:text-sm text-secondary-500 hidden sm:inline truncate max-w-[120px] lg:max-w-[150px]">{profile?.full_name}</span>
-            <div className="w-7 h-7 rounded-full bg-secondary-200 text-secondary-600 flex items-center justify-center text-xs font-medium sm:hidden">
-              {profile?.full_name?.charAt(0) || 'U'}
-            </div>
+            <Link to="/profile" aria-label="Mon profil" title="Mon profil" className="flex items-center gap-2 p-2 rounded-xl hover:bg-secondary-100 min-h-[44px]">
+              <span className="text-xs sm:text-sm text-secondary-500 hidden sm:inline truncate max-w-[120px] lg:max-w-[150px]">{profile?.full_name || 'Mon profil'}</span>
+              <div className="w-7 h-7 rounded-full bg-secondary-200 text-secondary-600 flex items-center justify-center text-xs font-medium sm:hidden">
+                {profile?.full_name?.charAt(0) || 'U'}
+              </div>
+            </Link>
             <button
               onClick={signOut}
               className="p-2.5 text-secondary-500 hover:text-secondary-700 hover:bg-secondary-100 rounded-xl transition-colors active:bg-secondary-200 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"

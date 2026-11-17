@@ -18,6 +18,7 @@ import { RapportsPage } from '@/pages/rapports/RapportsPage'
 import { GestionnairesPage } from '@/pages/gestionnaires/GestionnairesPage'
 import { ImportPage } from '@/pages/import/ImportPage'
 import { SettingsPage } from '@/pages/settings/SettingsPage'
+import { ProfilePage } from '@/pages/settings/ProfilePage'
 import { ConsultationPage } from '@/pages/consultation/ConsultationPage'
 import { LoadingSpinner } from '@/components/ui'
 
@@ -75,6 +76,7 @@ function App() {
               <Route path="/rapports" element={<RapportsPage />} />
               <Route path="/import" element={<ImportPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
               <Route path="/gestionnaires" element={<AdminRoute><GestionnairesPage /></AdminRoute>} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

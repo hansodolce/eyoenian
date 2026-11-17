@@ -8,6 +8,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<void>
   signInWithPin: (phone: string, pin: string) => Promise<void>
   signOut: () => Promise<void>
+  updateProfile: (fullName: string, phone: string, currentPin?: string) => Promise<void>
+  updatePassword: (currentPassword: string, newPassword: string) => Promise<void>
   isAdmin: boolean
   isGestionnaire: boolean
 }
@@ -118,6 +120,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null)
   }
 
+  function saveProfile(updated: Profile) {
+    persistProfile(updated)
+    setProfile(updated)
+  }
+
+  async function updateProfile(fullName: string, phone: string, currentPin?: string) {
+    if (!profile) throw new Error('Veuillez vous reconnecter')
+    if (!fullName.trim()) throw new Error('Le nom est obligatoire')
+    if (profile.role === 'gestionnaire') {
+      if (!phone.trim()) throw new Error('Le téléphone est obligatoire')
+      const { data, error } = await supabase.rpc('update_own_gestionnaire', {
+        p_id: profile.id, p_current_pin: currentPin || '',
+        p_full_name: fullName.trim(), p_phone: phone.trim(),
+      })
+      if (error) throw new Error(error.message)
+      saveProfile(data as Profile)
+    } else {
+      const { data, error } = await supabase.from('profiles')
+        .update({ full_name: fullName.trim(), phone: phone.trim() || null })
+        .eq('id', profile.id).select('*').single()
+      if (error) throw new Error(error.code === '23505' ? 'Ce téléphone est déjà utilisé par un autre compte' : error.message)
+      saveProfile(data as Profile)
+    }
+  }
+
+  async function updatePassword(currentPassword: string, newPassword: string) {
+    if (!profile) throw new Error('Veuillez vous reconnecter')
+    if (!currentPassword) throw new Error('Saisissez votre code actuel')
+    if (currentPassword === newPassword) throw new Error('Le nouveau code doit être différent du précédent')
+    if (profile.role === 'gestionnaire') {
+      if (!/^\d{4}$/.test(newPassword)) throw new Error('Le PIN doit contenir exactement 4 chiffres')
+      const { data, error } = await supabase.rpc('update_own_gestionnaire', {
+        p_id: profile.id, p_current_pin: currentPassword, p_new_pin: newPassword,
+      })
+      if (error) throw new Error(error.message)
+      saveProfile(data as Profile)
+      return
+    }
+    if (newPassword.length < 8) throw new Error('Le mot de passe doit contenir au moins 8 caractères')
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError || !user?.email || user.id !== profile.id || user.is_anonymous) {
+      throw new Error('Veuillez vous reconnecter pour modifier votre mot de passe')
+    }
+    const { error: verificationError } = await supabase.auth.signInWithPassword({
+      email: user.email, password: currentPassword,
+    })
+    if (verificationError) throw new Error('Mot de passe actuel incorrect ou connexion impossible')
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
   return (
     <AuthContext.Provider value={{
       profile,
@@ -125,6 +178,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signInWithPin,
       signOut,
+      updateProfile,
+      updatePassword,
       isAdmin: profile?.role === 'admin',
       isGestionnaire: profile?.role === 'gestionnaire'
     }}>
