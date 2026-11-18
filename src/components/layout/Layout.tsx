@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { Link, Outlet } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
-import { useAuth } from '@/hooks/useAuth'
 import { OfflineBanner } from '@/components/ui/OfflineBanner'
 
 export function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { profile, signOut } = useAuth()
 
   return (
     <div className="flex h-screen min-h-0 bg-secondary-50">
@@ -24,23 +22,7 @@ export function Layout() {
               <h1 className="text-base lg:text-lg font-semibold text-secondary-900 hidden sm:block">Eyo-Enian</h1>
             </div>
           </div>
-          <div className="flex items-center gap-1 sm:gap-3">
-            <Link to="/profile" aria-label="Mon profil" title="Mon profil" className="flex items-center gap-2 p-2 rounded-xl hover:bg-secondary-100 min-h-[44px]">
-              <span className="text-xs sm:text-sm text-secondary-500 hidden sm:inline truncate max-w-[120px] lg:max-w-[150px]">{profile?.full_name || 'Mon profil'}</span>
-              <div className="w-7 h-7 rounded-full bg-secondary-200 text-secondary-600 flex items-center justify-center text-xs font-medium sm:hidden">
-                {profile?.full_name?.charAt(0) || 'U'}
-              </div>
-            </Link>
-            <button
-              onClick={signOut}
-              className="p-2.5 text-secondary-500 hover:text-secondary-700 hover:bg-secondary-100 rounded-xl transition-colors active:bg-secondary-200 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-              title="Déconnexion"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
+          <span className="text-xs sm:text-sm font-medium text-secondary-600 px-3 py-2">Gestionnaire</span>
         </header>
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6" style={{ paddingBottom: 'env(safe-area-inset-bottom, 1rem)' }}>
           <Outlet />

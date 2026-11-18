@@ -11,8 +11,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-  },
+  // Mode sans authentification : utilise uniquement la clé publique du projet.
+  // Ignore aussi les anciennes sessions enregistrées dans le navigateur.
+  accessToken: async () => null,
 })

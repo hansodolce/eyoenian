@@ -1,4 +1,38 @@
-# React + TypeScript + Vite
+# Eyo-Enian — mode gestionnaire sans authentification
+
+L'application s'ouvre directement sur `/dashboard`. Tous les visiteurs utilisent
+le même espace gestionnaire : membres, cotisations, paiements, décaissements,
+réunions, présences, rapports, import Excel et paramètres.
+
+Il n'y a plus de compte utilisateur, de mot de passe, de PIN ou de session à créer.
+Les anciennes URL de connexion redirigent vers le tableau de bord. `/profile`
+redirige vers les paramètres et `/gestionnaires` vers le tableau de bord.
+
+## Configuration Supabase
+
+1. Conserver `VITE_SUPABASE_URL` et `VITE_SUPABASE_ANON_KEY` dans l'environnement
+   local et celui de l'hébergement. Utiliser la clé publique du projet.
+2. Sur la base existante, exécuter **`scripts/enable-no-auth.sql`** dans l'éditeur SQL
+   Supabase avant de déployer cette version.
+3. Déployer l'application. L'activation des connexions anonymes Supabase Auth
+   n'est plus nécessaire : le client utilise directement la clé publique et ignore
+   les anciennes sessions du navigateur.
+
+Le script accorde la lecture et les modifications des données métier sans
+connexion. Toute personne ayant accès à l'application peut donc les gérer.
+Les données et les anciens comptes sont conservés ; la table `profiles` n'est
+plus accessible au client. Le PIN global historique n'est plus utilisé.
+
+## Commandes
+
+```sh
+npm install
+npm run dev
+npm run build
+node --test scripts/no-auth.test.mjs
+```
+
+## Notes du template d'origine
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

@@ -1,15 +1,23 @@
 import { useState } from 'react'
-import { Card, CardBody, CardHeader, Button, Input, Badge, LoadingSpinner } from '@/components/ui'
+import { Link } from 'react-router-dom'
+import { Card, CardBody, Button, Input, Badge } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 import { formatDate, formatCurrency } from '@/utils'
+import type { Member, AnnualPayment, SpecialPayment, Attendance } from '@/types'
+
+interface ConsultationResult {
+  member: Member
+  annualPayments: AnnualPayment[]
+  specialPayments: SpecialPayment[]
+  attendances: Attendance[]
+}
 
 export function ConsultationPage() {
   const [step, setStep] = useState<'form' | 'result'>('form')
   const [phone, setPhone] = useState('')
-  const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [memberData, setMemberData] = useState<any>(null)
+  const [memberData, setMemberData] = useState<ConsultationResult | null>(null)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -17,16 +25,6 @@ export function ConsultationPage() {
     setError('')
 
     try {
-      const { data: settings } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'pin_global')
-        .single()
-
-      if (!settings || settings.value !== pin) {
-        throw new Error('PIN global incorrect')
-      }
-
       const { data: member, error: mError } = await supabase
         .from('members')
         .select('*')
@@ -37,22 +35,28 @@ export function ConsultationPage() {
         throw new Error('Aucun membre trouvé avec ce numéro')
       }
 
-      const { data: annualP } = await supabase
+      const { data: annualP, error: annualError } = await supabase
         .from('annual_payments')
         .select('*, contribution:annual_contributions(*)')
         .eq('member_id', member.id)
         .eq('statut', 'Confirmé')
+        .returns<AnnualPayment[]>()
+      if (annualError) throw new Error(annualError.message)
 
-      const { data: specialP } = await supabase
+      const { data: specialP, error: specialError } = await supabase
         .from('special_payments')
         .select('*, contribution:special_contributions(*)')
         .eq('member_id', member.id)
         .eq('statut', 'Confirmé')
+        .returns<SpecialPayment[]>()
+      if (specialError) throw new Error(specialError.message)
 
-      const { data: attendances } = await supabase
+      const { data: attendances, error: attendanceError } = await supabase
         .from('attendances')
         .select('*')
         .eq('member_id', member.id)
+        .returns<Attendance[]>()
+      if (attendanceError) throw new Error(attendanceError.message)
 
       setMemberData({
         member,
@@ -61,8 +65,8 @@ export function ConsultationPage() {
         attendances: attendances || [],
       })
       setStep('result')
-    } catch (err: any) {
-      setError(err.message)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Impossible de charger les informations du membre')
     } finally {
       setLoading(false)
     }
@@ -71,15 +75,14 @@ export function ConsultationPage() {
   function handleReset() {
     setStep('form')
     setPhone('')
-    setPin('')
     setMemberData(null)
     setError('')
   }
 
   if (step === 'result' && memberData) {
     const { member, annualPayments, specialPayments, attendances } = memberData
-    const totalPaid = [...annualPayments, ...specialPayments].reduce((s: number, p: any) => s + Number(p.montant), 0)
-    const presences = attendances.filter((a: any) => a.statut === 'Présent').length
+    const totalPaid = [...annualPayments, ...specialPayments].reduce((s, p) => s + Number(p.montant), 0)
+    const presences = attendances.filter(a => a.statut === 'Présent').length
 
     return (
       <div className="min-h-screen bg-secondary-50 p-4">
@@ -130,7 +133,7 @@ export function ConsultationPage() {
               {annualPayments.length > 0 && (
                 <>
                   <h4 className="text-sm font-semibold text-secondary-700 mb-2">Cotisations annuelles</h4>
-                  {annualPayments.map((p: any) => (
+                  {annualPayments.map(p => (
                     <div key={p.id} className="flex justify-between py-2 border-b border-secondary-100">
                       <span className="text-sm">{p.contribution?.annee || 'N/A'}</span>
                       <span className="text-sm font-medium text-emerald-600">{formatCurrency(p.montant)}</span>
@@ -142,7 +145,7 @@ export function ConsultationPage() {
               {specialPayments.length > 0 && (
                 <>
                   <h4 className="text-sm font-semibold text-secondary-700 mt-4 mb-2">Cotisations exceptionnelles</h4>
-                  {specialPayments.map((p: any) => (
+                  {specialPayments.map(p => (
                     <div key={p.id} className="flex justify-between py-2 border-b border-secondary-100">
                       <span className="text-sm">{p.contribution?.titre || 'N/A'}</span>
                       <span className="text-sm font-medium text-emerald-600">{formatCurrency(p.montant)}</span>
@@ -162,11 +165,11 @@ export function ConsultationPage() {
                   <p className="text-xs text-emerald-600">Présent</p>
                 </div>
                 <div className="p-4 bg-red-50 rounded-xl text-center">
-                  <p className="text-2xl font-bold text-red-700">{attendances.filter((a: any) => a.statut === 'Absent').length}</p>
+                  <p className="text-2xl font-bold text-red-700">{attendances.filter(a => a.statut === 'Absent').length}</p>
                   <p className="text-xs text-red-600">Absent</p>
                 </div>
                 <div className="p-4 bg-amber-50 rounded-xl text-center">
-                  <p className="text-2xl font-bold text-amber-700">{attendances.filter((a: any) => a.statut === 'Excusé').length}</p>
+                  <p className="text-2xl font-bold text-amber-700">{attendances.filter(a => a.statut === 'Excusé').length}</p>
                   <p className="text-xs text-amber-600">Excusé</p>
                 </div>
               </div>
@@ -175,6 +178,7 @@ export function ConsultationPage() {
 
           <div className="text-center">
             <Button variant="secondary" onClick={handleReset}>Consulter un autre membre</Button>
+            <Link to="/dashboard" className="block mt-4 text-sm text-primary-600">Retour au tableau de bord</Link>
           </div>
         </div>
       </div>
@@ -207,7 +211,6 @@ export function ConsultationPage() {
               </div>
 
               <Input label="Numéro de téléphone" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+225 01 02 03 04 05" required />
-              <Input label="PIN global" type="password" value={pin} onChange={e => setPin(e.target.value)} placeholder="••••" maxLength={4} required />
 
               {error && <p className="text-sm text-error bg-red-50 p-3 rounded-lg">{error}</p>}
 
@@ -217,7 +220,7 @@ export function ConsultationPage() {
         </Card>
 
         <p className="text-center text-xs text-secondary-400 mt-4">
-          Cette page est accessible à tous les membres de l'association
+          <Link to="/dashboard" className="text-primary-600">Retour au tableau de bord</Link>
         </p>
       </div>
     </div>

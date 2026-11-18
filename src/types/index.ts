@@ -1,16 +1,3 @@
-export type UserRole = 'admin' | 'gestionnaire' | 'member';
-
-export interface Profile {
-  id: string;
-  email?: string;
-  phone?: string;
-  full_name?: string;
-  role: UserRole;
-  is_active: boolean;
-  pin?: string;
-  created_at: string;
-}
-
 export interface Member {
   id: string;
   nom: string;
@@ -138,7 +125,6 @@ export interface AssociationSettings {
   adresse?: string;
   telephone?: string;
   email?: string;
-  pin_global?: string;
 }
 
 export type PaymentStatus = 'En attente' | 'Confirmé' | 'Rejeté';
